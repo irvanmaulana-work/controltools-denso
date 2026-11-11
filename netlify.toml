@@ -1,3 +1,9 @@
 [build]
   command = "npm run build"
   publish = "public/build"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+[server]
+  path = "/*"
