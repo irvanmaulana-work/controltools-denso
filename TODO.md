@@ -1,0 +1,4 @@
+- [ ] Buat migration baru: rebackfill_partlist_id_on_tickets_v2 (update walau partlist_id sudah terisi, berdasarkan drawing_no_supplier+size_type+sub_assy_drawing_unit atau null-safe match)
+- [ ] Jalankan migration v2
+- [ ] Clear cache/view
+- [ ] Verifikasi tampilan member stockouts history menampilkan partlist terbaru untuk ticket lama
