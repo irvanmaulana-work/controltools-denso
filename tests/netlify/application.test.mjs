@@ -18,7 +18,8 @@ test('Netlify application: authentication, permissions, inventory and approval t
   }
   const db=drizzle({client:pg,schema});
   const password=randomBytes(24).toString('hex');
-  const app=createApp(db,{secure:false,bootstrapPassword:()=>password});
+  let configuredPassword=password;
+  const app=createApp(db,{secure:false,bootstrapPassword:()=>configuredPassword});
   const server=app.listen(0,'127.0.0.1');
   await once(server,'listening');
   const origin=`http://127.0.0.1:${server.address().port}`;
@@ -44,6 +45,22 @@ test('Netlify application: authentication, permissions, inventory and approval t
     return (await db.select().from(schema.users).where(eq(schema.users.username,username)))[0];
   }
   async function login(client,username){await client.request('/login');assert.equal((await client.request('/login',{username,password})).status,303);}
+  await t.test('missing or invalid bootstrap configuration explains setup failure without leaking secrets',async()=>{
+    configuredPassword=undefined;
+    const unavailable=await guest.request('/setup');
+    assert.equal(unavailable.status,503);
+    assert.ok(unavailable.html.includes('belum tersedia di server'));
+    const missingPost=await guest.request('/setup',{name:'Administrator',username:'owner',npk:'A01',password});
+    assert.equal(missingPost.status,503);
+    assert.ok(missingPost.html.includes('belum tersedia di server'));
+    configuredPassword=password.slice(0,8);
+    const invalid=await guest.request('/setup',{name:'Administrator',username:'owner',npk:'A01',password});
+    assert.equal(invalid.status,503);
+    assert.ok(invalid.html.includes('12–128 karakter'));
+    assert.equal(invalid.html.includes(configuredPassword),false);
+    assert.equal((await db.select().from(schema.users)).length,0);
+    configuredPassword=password;
+  });
   await t.test('root and protected deep links route to login; setup is protected',async()=>{
     assert.equal((await guest.request('/')).location,'/login');
     assert.equal((await guest.request('/member/tickets')).location,'/login');

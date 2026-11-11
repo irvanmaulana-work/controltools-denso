@@ -8,7 +8,7 @@ Netlify menggunakan Node.js 24, menjalankan perintah build yang tercantum di `ne
 
 Netlify Database menyediakan Postgres. Skema ada di `db/schema.ts`, dan migrasi di `netlify/database/migrations` diterapkan otomatis saat deploy. Jangan menjalankan migrasi secara manual. Database Netlify yang baru tidak otomatis berisi akun atau data dari database Laravel sebelumnya.
 
-Variabel rahasia `INITIAL_ADMIN_PASSWORD` diperlukan untuk penyiapan admin pertama. Gunakan minimal 12 karakter; nilainya dimasukkan melalui konfigurasi lingkungan, bukan kode atau berkas yang di-commit. Pada situs setelah deploy, buka `/setup`, isi nama, NPK, username, dan password awal tersebut. Penyiapan terkunci setelah akun pertama dibuat. Password disimpan dalam bentuk hash scrypt. Setelah itu, masuk melalui `/login`.
+Variabel rahasia `INITIAL_ADMIN_PASSWORD` diperlukan untuk penyiapan admin pertama. Gunakan 12–128 karakter; nilainya dimasukkan melalui konfigurasi lingkungan, bukan kode atau berkas yang di-commit. Pada situs setelah deploy, buka `/setup`, isi nama, NPK, username, dan password awal tersebut. Penyiapan terkunci setelah akun pertama dibuat. Password disimpan dalam bentuk hash scrypt. Setelah itu, masuk melalui `/login`.
 
 Admin menambahkan akun approver dan member dari menu Pengguna serta menambahkan stok dari menu Partlist. Member membuat tiket dengan memilih partlist dan approver. Approver hanya dapat memproses tiket yang ditugaskan kepadanya. Stok berkurang saat approval, dengan transaksi dan penguncian baris untuk mencegah pemotongan ganda. Penolakan wajib menyertakan alasan dan tidak mengurangi stok. Approver juga dapat menambahkan partlist baru dengan jumlah awal 1, sesuai aturan aplikasi Laravel.
 

@@ -15,4 +15,4 @@ export async function verifyPassword(value, stored) {
   return equal((await scrypt(value, salt, 64)).toString('hex'), hash);
 }
 export const publicUser = ({ password, ...user }) => user;
-export class HttpError extends Error { constructor(status, message) { super(message); this.status = status; } }
+export class HttpError extends Error { constructor(status, message, code) { super(message); this.status = status; this.code = code; } }

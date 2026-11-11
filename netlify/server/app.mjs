@@ -23,6 +23,12 @@ export function createApp(db, options = {}) {
   const sessionName = secure ? '__Host-ct_session' : 'ct_session';
   const csrfName = secure ? '__Host-ct_csrf' : 'ct_csrf';
   const bootstrapPassword = options.bootstrapPassword ?? (() => process.env.INITIAL_ADMIN_PASSWORD);
+  function requireBootstrapPassword() {
+    const configured = bootstrapPassword();
+    if (!configured) throw new HttpError(503, 'Password administrator awal belum tersedia di server. Konfigurasi INITIAL_ADMIN_PASSWORD harus aktif untuk runtime situs dan situs perlu di-deploy ulang.', 'bootstrap_missing');
+    if (configured.length < 12 || configured.length > 128) throw new HttpError(503, 'Konfigurasi password administrator awal harus berisi 12–128 karakter. Perbarui INITIAL_ADMIN_PASSWORD lalu deploy ulang situs.', 'bootstrap_invalid_length');
+    return configured;
+  }
   app.disable('x-powered-by');
   app.use(express.urlencoded({ extended: false, limit: '24kb' }));
   app.use((req, res, next) => {
@@ -63,13 +69,13 @@ export function createApp(db, options = {}) {
   });
   app.get('/setup', async (req,res) => {
     if (await countUsers()) return res.redirect(302,'/login');
+    requireBootstrapPassword();
     render(req,res,'Penyiapan workspace',authForm(true,req.csrf));
   });
   app.post('/setup', async (req,res) => {
     await rateLimit(req, 'setup');
     const data = z.object({name:text,username:text,npk:text,password:z.string().min(12).max(128)}).parse(req.body);
-    const configured = bootstrapPassword();
-    if (!configured || configured.length < 12) fail(503, 'Password administrator awal belum dikonfigurasi.');
+    const configured = requireBootstrapPassword();
     if (!equal(data.password, configured)) fail(403,'Password administrator awal tidak cocok.');
     const password = await hashPassword(data.password);
     const user = await db.transaction(async tx => {
@@ -258,7 +264,7 @@ export function createApp(db, options = {}) {
   app.use((error,req,res,next)=>{
     if(res.headersSent) return next(error);
     let status=error.status||500;
-    let message=status<500?error.message:'Layanan belum dapat memproses permintaan. Silakan coba lagi.';
+    let message=error instanceof HttpError || status<500?error.message:'Layanan belum dapat memproses permintaan. Silakan coba lagi.';
     if(error instanceof z.ZodError){status=422;message='Periksa isian formulir: '+error.issues.map(i=>i.path.join('.')||'nilai').join(', ')+'. Pastikan semua kolom wajib terisi dengan nilai yang valid.';}
     const code=error.code||error.cause?.code;
     if(code==='23505'){status=409;message='Username, NPK, email, atau drawing number sudah digunakan.';}
